@@ -155,12 +155,12 @@ func OpenResultsFile(filepath string) *os.File {
 }
 
 // OpenLogFile opens the log file for the execution of a command
-func OpenLogFile(mpiImplem string) *os.File {
-	if mpiImplem == "" {
+func OpenLogFile(prefix string, name string) *os.File {
+	if prefix == "" || name == "" {
 		return nil
 	}
 
-	filename := "singularity-" + mpiImplem + ".log"
+	filename := prefix + "-" + name + ".log"
 	logFile, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Printf("failed to create log file: %s", err)
