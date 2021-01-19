@@ -21,6 +21,9 @@ const (
 	// FormatGZ represents a GZ file
 	FormatGZ = "gz"
 
+	// FormatTGZ represents a GZ file
+	FormatTGZ = "tgz"
+
 	// FormatTAR represents a simple TAR file
 	FormatTAR = "tar"
 
@@ -68,6 +71,8 @@ func GetTarArgs(format string) string {
 		return "-xjf"
 	case FormatGZ:
 		return "-xzf"
+	case FormatTGZ:
+		return "-xzf"
 	case FormatTAR:
 		return "-xf"
 	}
@@ -87,6 +92,10 @@ func DetectTarballFormat(filepath string) string {
 
 	if path.Ext(filepath) == ".tar" {
 		return FormatTAR
+	}
+
+	if path.Ext(filepath) == ".tgz" {
+		return FormatTGZ
 	}
 
 	return UnknownFormat
