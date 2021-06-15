@@ -119,3 +119,46 @@ func TestIntSliceToString(t *testing.T) {
 		}
 	}
 }
+
+func TestIntToAA(t *testing.T) {
+	tests := []struct {
+		input          int
+		expectedOutput string
+	}{
+		{
+			input:          0,
+			expectedOutput: "A",
+		},
+		{
+			input:          1,
+			expectedOutput: "B",
+		},
+		{
+			input:          25,
+			expectedOutput: "Z",
+		},
+		{
+			input:          26,
+			expectedOutput: "AA",
+		},
+		{
+			input:          27,
+			expectedOutput: "AB",
+		},
+		{
+			input:          51,
+			expectedOutput: "AZ",
+		},
+		{
+			input:          52,
+			expectedOutput: "AAA",
+		},
+	}
+
+	for _, tt := range tests {
+		res := IntToAA(tt.input)
+		if res != tt.expectedOutput {
+			t.Fatalf("unable to convert %d, result is %s instead of %s", tt.input, res, tt.expectedOutput)
+		}
+	}
+}

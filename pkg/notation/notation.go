@@ -128,3 +128,17 @@ func IntSliceToString(s []int) string {
 
 	return str
 }
+
+var alphabet = []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+
+// IntToAA converts any integer into a alphabetical series, e.g., 0 is A, 26 is AA
+func IntToAA(num int) string {
+	if num < 0 {
+		return "-ERROR-"
+	}
+	if num >= 0 && num < 26 {
+		return alphabet[num]
+	}
+	//return alphabet[num/26]
+	return IntToAA((num-26)-(num%26)) + IntToAA(num%26)
+}
