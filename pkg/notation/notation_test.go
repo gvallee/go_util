@@ -151,7 +151,11 @@ func TestIntToAA(t *testing.T) {
 		},
 		{
 			input:          52,
-			expectedOutput: "AAA",
+			expectedOutput: "BA",
+		},
+		{
+			input:          78,
+			expectedOutput: "CA",
 		},
 	}
 

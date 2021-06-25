@@ -139,6 +139,7 @@ func IntToAA(num int) string {
 	if num >= 0 && num < 26 {
 		return alphabet[num]
 	}
-	//return alphabet[num/26]
-	return IntToAA((num-26)-(num%26)) + IntToAA(num%26)
+
+	idx := num % 26
+	return IntToAA(num/26-1) + alphabet[idx]
 }
