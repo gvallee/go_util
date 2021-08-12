@@ -7,7 +7,6 @@
 package module
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -71,12 +70,14 @@ func ToEnv(envVars []string, modules []string) (map[string][]string, error) {
 		}
 		tokens := strings.Split(line, "=")
 		if len(tokens) != 2 {
-			return nil, fmt.Errorf("unable to parse %s", line)
+			// It is most certainly some output from the module loading script that we do not care about
+			continue
 		}
 		currentEnvVar := tokens[0]
 		currentEnvVarValue := tokens[1]
 		if _, ok := initialEnvVars[currentEnvVar]; !ok {
-			return nil, fmt.Errorf("%s is not a variable we were looking for, something went really wrong", currentEnvVar)
+			// This is not a variable we were looking for
+			continue
 		}
 		moduleEnvVars[currentEnvVar] = strings.Split(strings.Replace(currentEnvVarValue, initialEnvVars[currentEnvVar], "", 1), ":")
 	}
