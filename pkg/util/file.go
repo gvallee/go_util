@@ -1,4 +1,5 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
+// Copyright (c) 2026, NVIDIA CORPORATION. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -27,7 +28,7 @@ const (
 	// FormatTAR represents a simple TAR file
 	FormatTAR = "tar"
 
-	// UnkownFormat is the value returned when the format cannot be detected
+	// UnknownFormat is the value returned when the format cannot be detected
 	UnknownFormat = ""
 )
 
@@ -45,14 +46,14 @@ func PathExists(path string) bool {
 	return false
 }
 
-// FileExists is a utility function that checks whether a file exists or not.
-// If the file exits, FileExists return true; otherwise it returns false.
+// FileExists is a utility function that checks whether a path exists and is a regular file.
+// Returns false if the path does not exist, is a directory, or on any stat error.
 func FileExists(path string) bool {
 	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
-	return !info.IsDir()
+	return info.Mode().IsRegular()
 }
 
 // IsDir checks whether a path is pointing at a directory or not
@@ -64,7 +65,7 @@ func IsDir(name string) bool {
 	return info.Mode().IsDir()
 }
 
-// GetTarOpts returns the arguments to use with tar based on the format of the tarball
+// GetTarArgs returns the arguments to use with tar based on the format of the tarball
 func GetTarArgs(format string) string {
 	switch format {
 	case FormatBZ2:
@@ -79,7 +80,7 @@ func GetTarArgs(format string) string {
 	return ""
 }
 
-// DectectTarballFormat detects the format of a tarball so we can know how
+// DetectTarballFormat detects the format of a tarball so we can know how
 // to untar it.
 func DetectTarballFormat(filepath string) string {
 	if path.Ext(filepath) == ".bz2" {
@@ -111,35 +112,38 @@ func CopyFile(src string, dst string) error {
 	// Check that the source file is valid
 	srcStat, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("cannot access file %s: %s", src, err)
+		return fmt.Errorf("cannot access file %s: %w", src, err)
 	}
 
 	if !srcStat.Mode().IsRegular() {
-		return fmt.Errorf("invalid source file %s: %s", src, err)
+		return fmt.Errorf("invalid source file %s: not a regular file", src)
 	}
 
 	// Actually do the copy
 	s, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to open %s: %s", src, err)
+		return fmt.Errorf("failed to open %s: %w", src, err)
 	}
 	defer s.Close()
 
 	d, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("failed to create %s: %s", dst, err)
+		return fmt.Errorf("failed to create %s: %w", dst, err)
 	}
 	defer d.Close()
 
 	_, err = io.Copy(d, s)
 	if err != nil {
-		return fmt.Errorf("unabel to copy file from %s to %s: %s", src, dst, err)
+		return fmt.Errorf("unable to copy file from %s to %s: %w", src, dst, err)
+	}
+	if err := d.Sync(); err != nil {
+		return fmt.Errorf("failed to sync %s: %w", dst, err)
 	}
 
 	// Check whether the copy succeeded by comparing the sizes of the two files
 	dstStat, err := d.Stat()
 	if err != nil {
-		return fmt.Errorf("unable to get stat for %s: %s", d.Name(), err)
+		return fmt.Errorf("unable to get stat for %s: %w", d.Name(), err)
 	}
 	if srcStat.Size() != dstStat.Size() {
 		return fmt.Errorf("file copy failed, size is %d instead of %d", srcStat.Size(), dstStat.Size())
@@ -179,15 +183,16 @@ func OpenLogFile(prefix string, name string) *os.File {
 	return logFile
 }
 
-// DirInit ensures that the target directory is clean/empty
+// DirInit ensures that the target directory exists and is empty.
+// If the path already exists, it is removed and recreated.
 func DirInit(path string) error {
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		os.RemoveAll(path)
+	if _, err := os.Stat(path); err == nil {
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("failed to remove existing path %s: %w", path, err)
+		}
 	}
-	err := os.MkdirAll(path, 0755)
-	if err != nil {
-		log.Fatalf("failed to initialize directory %s: %s", path, err)
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", path, err)
 	}
-
 	return nil
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+// Copyright (c) 2020-2026, NVIDIA CORPORATION. All rights reserved.
 //
 // See LICENSE.txt for license information
 //
@@ -47,6 +47,10 @@ func CompressIntArray(array []int) string {
 }
 
 func GetNumberOfEltsFromCompressedNotation(str string) (int, error) {
+	str = strings.TrimSpace(str)
+	if str == "" {
+		return 0, nil
+	}
 	num := 0
 	// ", " and "," are two possible delimiters but cannot be mixed
 	t1 := strings.Split(str, ", ")
@@ -56,17 +60,23 @@ func GetNumberOfEltsFromCompressedNotation(str string) (int, error) {
 	for _, t := range t1 {
 		t2 := strings.Split(t, "-")
 		if len(t2) == 2 {
-			val1, err := strconv.Atoi(t2[0])
+			val1, err := strconv.Atoi(strings.TrimSpace(t2[0]))
 			if err != nil {
 				return 0, err
 			}
-			val2, err := strconv.Atoi(t2[1])
+			val2, err := strconv.Atoi(strings.TrimSpace(t2[1]))
 			if err != nil {
 				return 0, err
 			}
 			num += val2 - val1 + 1
 		} else {
-			num++
+			for _, part := range t2 {
+				_, err := strconv.Atoi(strings.TrimSpace(part))
+				if err != nil {
+					return 0, err
+				}
+				num++
+			}
 		}
 	}
 	return num, nil
@@ -77,6 +87,10 @@ func GetNumberOfRanksFromCompressedNotation(str string) (int, error) {
 }
 
 func ConvertCompressedCallListToIntSlice(str string) ([]int, error) {
+	str = strings.TrimSpace(str)
+	if str == "" {
+		return nil, nil
+	}
 	var callIDs []int
 
 	tokens := strings.Split(str, ", ")
