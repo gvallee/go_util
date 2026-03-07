@@ -19,13 +19,13 @@ const (
 	// FormatBZ2 represents a bz2-compressed archive
 	FormatBZ2 = "bz2"
 
-	// FormatGZ represents a GZ file
+	// FormatGZ represents a gzip-compressed archive
 	FormatGZ = "gz"
 
-	// FormatTGZ represents a GZ file
+	// FormatTGZ represents a gzip-compressed tarball (.tgz)
 	FormatTGZ = "tgz"
 
-	// FormatTAR represents a simple TAR file
+	// FormatTAR represents an uncompressed TAR archive
 	FormatTAR = "tar"
 
 	// UnknownFormat is the value returned when the format cannot be detected
@@ -97,6 +97,7 @@ func DetectTarballFormat(filepath string) string {
 
 // CopyFile copies the regular file src to dst, preserving content and mode (permissions).
 // If src and dst are the same path, it returns nil without copying.
+// Returns error if src or dst is empty, if src is not a regular file, or if dst cannot be written (e.g. dst is an existing directory).
 func CopyFile(src string, dst string) error {
 	if src == dst {
 		return nil
@@ -155,6 +156,7 @@ func CopyFile(src string, dst string) error {
 }
 
 // OpenResultsFile opens the result file for appending, or creates it if it does not exist.
+// Returns error if path is empty. New files are created with mode 0644.
 func OpenResultsFile(filepath string) (*os.File, error) {
 	if filepath == "" {
 		return nil, fmt.Errorf("results file path is empty")
@@ -171,6 +173,7 @@ func OpenResultsFile(filepath string) (*os.File, error) {
 }
 
 // OpenLogFile opens or creates the log file prefix-name.log for appending.
+// Returns error if prefix or name is empty. New files are created with mode 0644.
 func OpenLogFile(prefix string, name string) (*os.File, error) {
 	if prefix == "" || name == "" {
 		return nil, fmt.Errorf("open log file: prefix and name required")
@@ -184,7 +187,7 @@ func OpenLogFile(prefix string, name string) (*os.File, error) {
 }
 
 // DirInit ensures that the target directory exists and is empty.
-// If the path already exists, it is removed and recreated.
+// If the path already exists, it is removed and recreated. Returns error if path is empty.
 func DirInit(pathStr string) error {
 	if pathStr == "" {
 		return fmt.Errorf("directory path is empty")

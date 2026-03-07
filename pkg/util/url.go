@@ -8,20 +8,20 @@ package util
 
 // URL type constants for DetectURLType.
 const (
-	// UnsupportedURLType is a constant for a type of URL that we do not support yet
+	// UnsupportedURLType is returned for empty or unrecognized URLs.
 	UnsupportedURLType = ""
 
-	// FileURL is a constant for a file-based URL
+	// FileURL indicates a file URL (file://).
 	FileURL = "file"
 
-	// HttpURL is a constant for a HTTP-based URL
+	// HttpURL indicates an HTTP or HTTPS URL.
 	HttpURL = "http"
 
-	// GitURL is a constant for a Git URL
+	// GitURL indicates a URL ending in .git (e.g. repository clone URL).
 	GitURL = "git"
 )
 
-// DetectURLType detects the type of the URL that is passed in.
+// DetectURLType returns the URL type (FileURL, HttpURL, GitURL, or UnsupportedURLType).
 // Returns UnsupportedURLType for empty or unrecognized URLs.
 func DetectURLType(url string) string {
 	if len(url) < 4 {

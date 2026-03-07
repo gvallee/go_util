@@ -29,6 +29,8 @@ func addSingleton(str string, n int) string {
 	return fmt.Sprintf("%s,%d", str, n)
 }
 
+// CompressIntArray compresses consecutive integers into range notation (e.g. [1,2,3] -> "1-3").
+// Singletons and ranges are comma-separated; input need not be sorted.
 func CompressIntArray(array []int) string {
 	compressedRep := ""
 	for i := 0; i < len(array); i++ {
@@ -47,6 +49,8 @@ func CompressIntArray(array []int) string {
 	return compressedRep
 }
 
+// GetNumberOfEltsFromCompressedNotation parses a compressed notation string (e.g. "1-5,8")
+// and returns the total number of elements. Accepts ", " or "," as separator; empty string returns 0.
 func GetNumberOfEltsFromCompressedNotation(str string) (int, error) {
 	str = strings.TrimSpace(str)
 	if str == "" {
@@ -86,10 +90,14 @@ func GetNumberOfEltsFromCompressedNotation(str string) (int, error) {
 	return num, nil
 }
 
+// GetNumberOfRanksFromCompressedNotation returns the number of elements in the compressed notation;
+// it is equivalent to GetNumberOfEltsFromCompressedNotation.
 func GetNumberOfRanksFromCompressedNotation(str string) (int, error) {
 	return GetNumberOfEltsFromCompressedNotation(str)
 }
 
+// ConvertCompressedCallListToIntSlice parses a compressed notation string (e.g. "1-5,8")
+// and returns the expanded slice of integers. Empty string returns nil, nil.
 func ConvertCompressedCallListToIntSlice(str string) ([]int, error) {
 	str = strings.TrimSpace(str)
 	if str == "" {
@@ -154,7 +162,8 @@ func IntSliceToString(s []int) string {
 
 var alphabet = []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
 
-// IntToAA converts any integer into a alphabetical series, e.g., 0 is A, 26 is AA
+// IntToAA converts a non-negative integer to alphabetic notation (0=A, 26=AA, 27=AB, ...).
+// Returns "-ERROR-" for negative input.
 func IntToAA(num int) string {
 	if num < 0 {
 		return "-ERROR-"
