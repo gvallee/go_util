@@ -155,6 +155,9 @@ func CopyFile(src string, dst string) error {
 
 // OpenResultsFile opens the result file for appending, or creates it if it does not exist.
 func OpenResultsFile(filepath string) (*os.File, error) {
+	if filepath == "" {
+		return nil, fmt.Errorf("results file path is empty")
+	}
 	mode := os.O_APPEND | os.O_RDWR
 	if !FileExists(filepath) {
 		mode = os.O_RDWR | os.O_CREATE

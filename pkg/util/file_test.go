@@ -240,6 +240,9 @@ func TestOpenResultsFile(t *testing.T) {
 }
 
 func TestOpenResultsFileError(t *testing.T) {
+	if _, err := OpenResultsFile(""); err == nil {
+		t.Fatal("OpenResultsFile(\"\") expected error")
+	}
 	// Parent directory does not exist -> open must fail
 	_, err := OpenResultsFile("/nonexistent/parent/results")
 	if err == nil {
