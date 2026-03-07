@@ -14,9 +14,9 @@ import (
 	"path"
 )
 
-// Constants defining the format of the MPI package
+// Tarball format constants for use with DetectTarballFormat and GetTarArgs.
 const (
-	// FormatBZ2 represents a bz2 file
+	// FormatBZ2 represents a bz2-compressed archive
 	FormatBZ2 = "bz2"
 
 	// FormatGZ represents a GZ file
@@ -57,7 +57,8 @@ func IsDir(pathStr string) bool {
 	return info.Mode().IsDir()
 }
 
-// GetTarArgs returns the arguments to use with tar based on the format of the tarball
+// GetTarArgs returns the arguments to use with tar based on the format of the tarball.
+// It returns the empty string for unknown or unsupported format; callers should validate before passing to tar.
 func GetTarArgs(format string) string {
 	switch format {
 	case FormatBZ2:
@@ -72,8 +73,8 @@ func GetTarArgs(format string) string {
 	return ""
 }
 
-// DetectTarballFormat detects the format of a tarball so we can know how
-// to untar it.
+// DetectTarballFormat returns the archive format based on the file extension
+// (e.g. .gz, .tar, .tgz, .bz2). Returns UnknownFormat for unknown or empty path.
 func DetectTarballFormat(filepath string) string {
 	if path.Ext(filepath) == ".bz2" {
 		return FormatBZ2
