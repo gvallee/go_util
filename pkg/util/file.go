@@ -1,70 +1,64 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
+// Copyright (c) 2026, NVIDIA CORPORATION. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// Package util provides file, path, URL, and string utilities for reuse across projects.
 package util
 
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path"
 )
 
-// Constants defining the format of the MPI package
+// Tarball format constants for use with DetectTarballFormat and GetTarArgs.
 const (
-	// FormatBZ2 represents a bz2 file
+	// FormatBZ2 represents a bz2-compressed archive
 	FormatBZ2 = "bz2"
 
-	// FormatGZ represents a GZ file
+	// FormatGZ represents a gzip-compressed archive
 	FormatGZ = "gz"
 
-	// FormatTGZ represents a GZ file
+	// FormatTGZ represents a gzip-compressed tarball (.tgz)
 	FormatTGZ = "tgz"
 
-	// FormatTAR represents a simple TAR file
+	// FormatTAR represents an uncompressed TAR archive
 	FormatTAR = "tar"
 
-	// UnkownFormat is the value returned when the format cannot be detected
+	// UnknownFormat is the value returned when the format cannot be detected
 	UnknownFormat = ""
 )
 
-// PathExists checks whether a given path exists
-func PathExists(path string) bool {
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return false
-	}
-
-	if err == nil {
-		return true
-	}
-
-	return false
+// PathExists reports whether the named path exists (returns false on any stat error, e.g. permission denied).
+func PathExists(pathStr string) bool {
+	_, err := os.Stat(pathStr)
+	return err == nil
 }
 
-// FileExists is a utility function that checks whether a file exists or not.
-// If the file exits, FileExists return true; otherwise it returns false.
-func FileExists(path string) bool {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
+// FileExists reports whether pathStr exists and is a regular file.
+// It returns false if the path does not exist, is a directory, or on any stat error.
+func FileExists(pathStr string) bool {
+	info, err := os.Stat(pathStr)
+	if err != nil {
 		return false
 	}
-	return !info.IsDir()
+	return info.Mode().IsRegular()
 }
 
-// IsDir checks whether a path is pointing at a directory or not
-func IsDir(name string) bool {
-	info, err := os.Stat(name)
+// IsDir reports whether pathStr exists and is a directory.
+func IsDir(pathStr string) bool {
+	info, err := os.Stat(pathStr)
 	if err != nil {
 		return false
 	}
 	return info.Mode().IsDir()
 }
 
-// GetTarOpts returns the arguments to use with tar based on the format of the tarball
+// GetTarArgs returns the arguments to use with tar based on the format of the tarball.
+// It returns the empty string for unknown or unsupported format; callers should validate before passing to tar.
 func GetTarArgs(format string) string {
 	switch format {
 	case FormatBZ2:
@@ -79,8 +73,8 @@ func GetTarArgs(format string) string {
 	return ""
 }
 
-// DectectTarballFormat detects the format of a tarball so we can know how
-// to untar it.
+// DetectTarballFormat returns the archive format based on the file extension
+// (e.g. .gz, .tar, .tgz, .bz2). Returns UnknownFormat for unknown or empty path.
 func DetectTarballFormat(filepath string) string {
 	if path.Ext(filepath) == ".bz2" {
 		return FormatBZ2
@@ -101,93 +95,110 @@ func DetectTarballFormat(filepath string) string {
 	return UnknownFormat
 }
 
-// CopyFile is a utility functions that copies a file
+// CopyFile copies the regular file src to dst, preserving content and mode (permissions).
+// If src and dst are the same path, it returns nil without copying.
+// Returns error if src or dst is empty, if src is not a regular file, or if dst cannot be written (e.g. dst is an existing directory).
 func CopyFile(src string, dst string) error {
 	if src == dst {
 		return nil
 	}
+	if src == "" {
+		return fmt.Errorf("copy file: source path is empty")
+	}
+	if dst == "" {
+		return fmt.Errorf("copy file: destination path is empty")
+	}
 
-	log.Printf("* Copying %s to %s", src, dst)
 	// Check that the source file is valid
 	srcStat, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("cannot access file %s: %s", src, err)
+		return fmt.Errorf("cannot access file %s: %w", src, err)
 	}
 
 	if !srcStat.Mode().IsRegular() {
-		return fmt.Errorf("invalid source file %s: %s", src, err)
+		return fmt.Errorf("invalid source file %s: not a regular file", src)
 	}
 
 	// Actually do the copy
 	s, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to open %s: %s", src, err)
+		return fmt.Errorf("failed to open %s: %w", src, err)
 	}
 	defer s.Close()
 
 	d, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("failed to create %s: %s", dst, err)
+		return fmt.Errorf("failed to create %s: %w", dst, err)
 	}
 	defer d.Close()
 
 	_, err = io.Copy(d, s)
 	if err != nil {
-		return fmt.Errorf("unabel to copy file from %s to %s: %s", src, dst, err)
+		return fmt.Errorf("unable to copy file from %s to %s: %w", src, dst, err)
+	}
+	if err := d.Sync(); err != nil {
+		return fmt.Errorf("failed to sync %s: %w", dst, err)
 	}
 
 	// Check whether the copy succeeded by comparing the sizes of the two files
 	dstStat, err := d.Stat()
 	if err != nil {
-		return fmt.Errorf("unable to get stat for %s: %s", d.Name(), err)
+		return fmt.Errorf("unable to get stat for %s: %w", d.Name(), err)
 	}
 	if srcStat.Size() != dstStat.Size() {
 		return fmt.Errorf("file copy failed, size is %d instead of %d", srcStat.Size(), dstStat.Size())
 	}
-
+	// Preserve source mode so executables and permissions are copied correctly
+	if err := os.Chmod(dst, srcStat.Mode()); err != nil {
+		return fmt.Errorf("failed to set mode on %s: %w", dst, err)
+	}
 	return nil
 }
 
-// OpenResultsFile opens the result files associated to the experiments
-func OpenResultsFile(filepath string) *os.File {
+// OpenResultsFile opens the result file for appending, or creates it if it does not exist.
+// Returns error if path is empty. New files are created with mode 0644.
+func OpenResultsFile(filepath string) (*os.File, error) {
+	if filepath == "" {
+		return nil, fmt.Errorf("results file path is empty")
+	}
 	mode := os.O_APPEND | os.O_RDWR
 	if !FileExists(filepath) {
 		mode = os.O_RDWR | os.O_CREATE
 	}
-	f, err := os.OpenFile(filepath, mode, 0755)
+	f, err := os.OpenFile(filepath, mode, 0644)
 	if err != nil {
-		log.Printf("failed to open file %s: %s", filepath, err)
-		return nil
+		return nil, fmt.Errorf("open results file %s: %w", filepath, err)
 	}
-
-	return f
+	return f, nil
 }
 
-// OpenLogFile opens the log file for the execution of a command
-func OpenLogFile(prefix string, name string) *os.File {
+// OpenLogFile opens or creates the log file prefix-name.log for appending.
+// Returns error if prefix or name is empty. New files are created with mode 0644.
+func OpenLogFile(prefix string, name string) (*os.File, error) {
 	if prefix == "" || name == "" {
-		return nil
+		return nil, fmt.Errorf("open log file: prefix and name required")
 	}
-
 	filename := prefix + "-" + name + ".log"
-	logFile, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		log.Printf("failed to create log file: %s", err)
-		return nil
+		return nil, fmt.Errorf("open log file %s: %w", filename, err)
 	}
-
-	return logFile
+	return f, nil
 }
 
-// DirInit ensures that the target directory is clean/empty
-func DirInit(path string) error {
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		os.RemoveAll(path)
+// DirInit ensures that the target directory exists and is empty.
+// If the path already exists, it is removed and recreated. Returns error if path is empty.
+func DirInit(pathStr string) error {
+	if pathStr == "" {
+		return fmt.Errorf("directory path is empty")
 	}
-	err := os.MkdirAll(path, 0755)
-	if err != nil {
-		log.Fatalf("failed to initialize directory %s: %s", path, err)
+	if _, err := os.Stat(pathStr); err == nil {
+		if err := os.RemoveAll(pathStr); err != nil {
+			return fmt.Errorf("failed to remove existing path %s: %w", pathStr, err)
+		}
 	}
-
+	if err := os.MkdirAll(pathStr, 0755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", pathStr, err)
+	}
 	return nil
 }

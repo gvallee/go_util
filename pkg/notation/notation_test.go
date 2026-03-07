@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+// Copyright (c) 2020-2026, NVIDIA CORPORATION. All rights reserved.
 //
 // See LICENSE.txt for license information
 //
@@ -15,16 +15,17 @@ func TestCompressIntArray(t *testing.T) {
 		array           []int
 		expectedResults string
 	}{
-		{
-			array:           []int{0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 42},
-			expectedResults: "0-6,8-10,42",
-		},
+		{[]int{0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 42}, "0-6,8-10,42"},
+		{[]int{}, ""},
+		{nil, ""},
+		{[]int{7}, "7"},
+		{[]int{1, 2, 3}, "1-3"},
 	}
 
 	for _, tt := range tests {
 		str := CompressIntArray(tt.array)
-		if tt.expectedResults != str {
-			t.Fatalf("Test failed: got %s instead of %s", str, tt.expectedResults)
+		if str != tt.expectedResults {
+			t.Errorf("CompressIntArray(%v) = %q, want %q", tt.array, str, tt.expectedResults)
 		}
 	}
 }
@@ -34,28 +35,50 @@ func TestConvertCompressedCallListToIntSlice(t *testing.T) {
 		input         string
 		expectedArray []int
 	}{
-		{
-			input:         "32",
-			expectedArray: []int{32},
-		},
-		{
-			input:         "32-35,40",
-			expectedArray: []int{32, 33, 34, 35, 40},
-		},
+		{"32", []int{32}},
+		{"32-35,40", []int{32, 33, 34, 35, 40}},
+		{"", []int{}},
+		{"1, 2, 3", []int{1, 2, 3}},
 	}
 
 	for _, tt := range tests {
 		array, err := ConvertCompressedCallListToIntSlice(tt.input)
 		if err != nil {
-			t.Fatalf("ConvertCompressedCallListToIntSlice() failed: %s", err)
+			t.Fatalf("ConvertCompressedCallListToIntSlice(%q) failed: %v", tt.input, err)
 		}
 		if len(array) != len(tt.expectedArray) {
-			t.Fatalf("ConvertCompressedCallListToIntSlice() returned %d elements instead of %d", len(array), len(tt.expectedArray))
+			t.Fatalf("ConvertCompressedCallListToIntSlice(%q) returned %d elements, want %d", tt.input, len(array), len(tt.expectedArray))
 		}
-		for i := 0; i < len(tt.expectedArray); i++ {
+		for i := range tt.expectedArray {
 			if array[i] != tt.expectedArray[i] {
-				t.Fatalf("element %d of the array is %d instead of %d", i, array[i], tt.expectedArray[i])
+				t.Fatalf("element %d = %d, want %d", i, array[i], tt.expectedArray[i])
 			}
+		}
+	}
+}
+
+func TestConvertCompressedCallListToIntSliceErrors(t *testing.T) {
+	for _, input := range []string{"abc", "1-2a", "5-1"} {
+		_, err := ConvertCompressedCallListToIntSlice(input)
+		if err == nil {
+			t.Errorf("ConvertCompressedCallListToIntSlice(%q) expected error", input)
+		}
+	}
+}
+
+func TestConvertCompressedCallListToIntSliceWithSpaces(t *testing.T) {
+	// TrimSpace on range parts allows "1 - 5" style input
+	got, err := ConvertCompressedCallListToIntSlice("1 - 5")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []int{1, 2, 3, 4, 5}
+	if len(got) != len(want) {
+		t.Fatalf("got len %d, want %d", len(got), len(want))
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("at %d: got %d, want %d", i, got[i], want[i])
 		}
 	}
 }
@@ -65,38 +88,30 @@ func TestGetNumberOfRanksFromCompressedNotation(t *testing.T) {
 		input          string
 		expectedOutput int
 	}{
-		{
-			input:          "1, 2",
-			expectedOutput: 2,
-		},
-		{
-			input:          "1,2",
-			expectedOutput: 2,
-		},
-		{
-			input:          "1-5",
-			expectedOutput: 5,
-		},
-		{
-			input:          "0,1-5",
-			expectedOutput: 6,
-		},
-		{
-			input:          "0,1-5,6",
-			expectedOutput: 7,
-		},
-		{
-			input:          "32",
-			expectedOutput: 1,
-		},
+		{"1, 2", 2},
+		{"1,2", 2},
+		{"1-5", 5},
+		{"0,1-5", 6},
+		{"0,1-5,6", 7},
+		{"32", 1},
+		{"", 0},
 	}
 	for _, tt := range tests {
 		n, err := GetNumberOfRanksFromCompressedNotation(tt.input)
 		if err != nil {
-			t.Fatalf("GetNumberOfRanksFromCompressedNotation() failed: %s", err)
+			t.Fatalf("GetNumberOfRanksFromCompressedNotation(%q) failed: %v", tt.input, err)
 		}
 		if n != tt.expectedOutput {
-			t.Fatalf("GetNumberOfRanksFromCompressedNotation() returned %d instead of %d for %s", n, tt.expectedOutput, tt.input)
+			t.Fatalf("GetNumberOfRanksFromCompressedNotation(%q) = %d, want %d", tt.input, n, tt.expectedOutput)
+		}
+	}
+}
+
+func TestGetNumberOfEltsFromCompressedNotationErrors(t *testing.T) {
+	for _, input := range []string{"1-x", "a", "5-1"} {
+		_, err := GetNumberOfEltsFromCompressedNotation(input)
+		if err == nil {
+			t.Errorf("GetNumberOfEltsFromCompressedNotation(%q) expected error", input)
 		}
 	}
 }
@@ -106,16 +121,16 @@ func TestIntSliceToString(t *testing.T) {
 		s              []int
 		expectedResult string
 	}{
-		{
-			s:              []int{1, 2, 3, 4, 5, 6},
-			expectedResult: "1,2,3,4,5,6",
-		},
+		{[]int{1, 2, 3, 4, 5, 6}, "1,2,3,4,5,6"},
+		{[]int{}, ""},
+		{nil, ""},
+		{[]int{42}, "42"},
 	}
 
 	for _, tt := range tests {
 		str := IntSliceToString(tt.s)
 		if str != tt.expectedResult {
-			t.Fatalf("Test returned %s instead of %s", str, tt.expectedResult)
+			t.Errorf("IntSliceToString(%v) = %q, want %q", tt.s, str, tt.expectedResult)
 		}
 	}
 }
@@ -125,44 +140,26 @@ func TestIntToAA(t *testing.T) {
 		input          int
 		expectedOutput string
 	}{
-		{
-			input:          0,
-			expectedOutput: "A",
-		},
-		{
-			input:          1,
-			expectedOutput: "B",
-		},
-		{
-			input:          25,
-			expectedOutput: "Z",
-		},
-		{
-			input:          26,
-			expectedOutput: "AA",
-		},
-		{
-			input:          27,
-			expectedOutput: "AB",
-		},
-		{
-			input:          51,
-			expectedOutput: "AZ",
-		},
-		{
-			input:          52,
-			expectedOutput: "BA",
-		},
-		{
-			input:          78,
-			expectedOutput: "CA",
-		},
+		{0, "A"},
+		{1, "B"},
+		{25, "Z"},
+		{26, "AA"},
+		{27, "AB"},
+		{51, "AZ"},
+		{52, "BA"},
+		{78, "CA"},
 	}
 
 	for _, tt := range tests {
 		res := IntToAA(tt.input)
 		if res != tt.expectedOutput {
-			t.Fatalf("unable to convert %d, result is %s instead of %s", tt.input, res, tt.expectedOutput)
+			t.Errorf("IntToAA(%d) = %q, want %q", tt.input, res, tt.expectedOutput)
 		}
+	}
+}
+
+func TestIntToAANegative(t *testing.T) {
+	if got := IntToAA(-1); got != "-ERROR-" {
+		t.Errorf("IntToAA(-1) = %q, want \"-ERROR-\"", got)
 	}
 }
