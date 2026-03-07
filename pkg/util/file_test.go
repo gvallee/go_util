@@ -193,6 +193,10 @@ func TestCopyFileErrors(t *testing.T) {
 }
 
 func TestDirInit(t *testing.T) {
+	if err := DirInit(""); err == nil {
+		t.Fatal("DirInit(\"\") expected error")
+	}
+
 	dir := t.TempDir()
 	target := filepath.Join(dir, "initme")
 	if err := os.MkdirAll(target, 0755); err != nil {

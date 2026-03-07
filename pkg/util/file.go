@@ -182,6 +182,9 @@ func OpenLogFile(prefix string, name string) (*os.File, error) {
 // DirInit ensures that the target directory exists and is empty.
 // If the path already exists, it is removed and recreated.
 func DirInit(pathStr string) error {
+	if pathStr == "" {
+		return fmt.Errorf("directory path is empty")
+	}
 	if _, err := os.Stat(pathStr); err == nil {
 		if err := os.RemoveAll(pathStr); err != nil {
 			return fmt.Errorf("failed to remove existing path %s: %w", pathStr, err)
