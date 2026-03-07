@@ -17,6 +17,7 @@ func TestCompressIntArray(t *testing.T) {
 	}{
 		{[]int{0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 42}, "0-6,8-10,42"},
 		{[]int{}, ""},
+		{nil, ""},
 		{[]int{7}, "7"},
 		{[]int{1, 2, 3}, "1-3"},
 	}
@@ -122,6 +123,7 @@ func TestIntSliceToString(t *testing.T) {
 	}{
 		{[]int{1, 2, 3, 4, 5, 6}, "1,2,3,4,5,6"},
 		{[]int{}, ""},
+		{nil, ""},
 		{[]int{42}, "42"},
 	}
 

@@ -10,7 +10,6 @@ package util
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path"
 )
@@ -144,35 +143,30 @@ func CopyFile(src string, dst string) error {
 	return nil
 }
 
-// OpenResultsFile opens the result files associated to the experiments
-func OpenResultsFile(filepath string) *os.File {
+// OpenResultsFile opens the result file for appending, or creates it if it does not exist.
+func OpenResultsFile(filepath string) (*os.File, error) {
 	mode := os.O_APPEND | os.O_RDWR
 	if !FileExists(filepath) {
 		mode = os.O_RDWR | os.O_CREATE
 	}
 	f, err := os.OpenFile(filepath, mode, 0755)
 	if err != nil {
-		log.Printf("failed to open file %s: %s", filepath, err)
-		return nil
+		return nil, fmt.Errorf("open results file %s: %w", filepath, err)
 	}
-
-	return f
+	return f, nil
 }
 
-// OpenLogFile opens the log file for the execution of a command
-func OpenLogFile(prefix string, name string) *os.File {
+// OpenLogFile opens or creates the log file prefix-name.log for appending.
+func OpenLogFile(prefix string, name string) (*os.File, error) {
 	if prefix == "" || name == "" {
-		return nil
+		return nil, fmt.Errorf("open log file: prefix and name required")
 	}
-
 	filename := prefix + "-" + name + ".log"
-	logFile, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Printf("failed to create log file: %s", err)
-		return nil
+		return nil, fmt.Errorf("open log file %s: %w", filename, err)
 	}
-
-	return logFile
+	return f, nil
 }
 
 // DirInit ensures that the target directory exists and is empty.

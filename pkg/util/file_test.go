@@ -20,6 +20,9 @@ func TestPathExists(t *testing.T) {
 	if PathExists(filepath.Join(dir, "nonexistent")) {
 		t.Error("PathExists(nonexistent) = true, want false")
 	}
+	if PathExists("") {
+		t.Error("PathExists(empty string) = true, want false")
+	}
 }
 
 func TestFileExists(t *testing.T) {
@@ -147,6 +150,17 @@ func TestCopyFileErrors(t *testing.T) {
 			t.Fatal("CopyFile(directory) expected error")
 		}
 	})
+
+	t.Run("destination is directory", func(t *testing.T) {
+		dstdir := filepath.Join(dir, "dstdir")
+		if err := os.Mkdir(dstdir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		err := CopyFile(existing, dstdir)
+		if err == nil {
+			t.Fatal("CopyFile(dst=directory) expected error")
+		}
+	})
 }
 
 func TestDirInit(t *testing.T) {
@@ -179,17 +193,25 @@ func TestDirInit(t *testing.T) {
 func TestOpenResultsFile(t *testing.T) {
 	dir := t.TempDir()
 	fpath := filepath.Join(dir, "results")
-	f := OpenResultsFile(fpath)
-	if f == nil {
-		t.Fatal("OpenResultsFile() returned nil")
+	f, err := OpenResultsFile(fpath)
+	if err != nil {
+		t.Fatalf("OpenResultsFile() error: %v", err)
 	}
 	f.Close()
 	// Open again (append mode)
-	f2 := OpenResultsFile(fpath)
-	if f2 == nil {
-		t.Fatal("OpenResultsFile() second open returned nil")
+	f2, err := OpenResultsFile(fpath)
+	if err != nil {
+		t.Fatalf("OpenResultsFile() second open error: %v", err)
 	}
 	f2.Close()
+}
+
+func TestOpenResultsFileError(t *testing.T) {
+	// Parent directory does not exist -> open must fail
+	_, err := OpenResultsFile("/nonexistent/parent/results")
+	if err == nil {
+		t.Fatal("OpenResultsFile(nonexistent parent) expected error")
+	}
 }
 
 func TestOpenLogFile(t *testing.T) {
@@ -200,15 +222,15 @@ func TestOpenLogFile(t *testing.T) {
 	}
 	defer os.Chdir(origWd)
 
-	if got := OpenLogFile("", "name"); got != nil {
-		t.Error("OpenLogFile(\"\", \"name\") should return nil")
+	if _, err := OpenLogFile("", "name"); err == nil {
+		t.Error("OpenLogFile(\"\", \"name\") should return error")
 	}
-	if got := OpenLogFile("prefix", ""); got != nil {
-		t.Error("OpenLogFile(\"prefix\", \"\") should return nil")
+	if _, err := OpenLogFile("prefix", ""); err == nil {
+		t.Error("OpenLogFile(\"prefix\", \"\") should return error")
 	}
-	f := OpenLogFile("prefix", "mylog")
-	if f == nil {
-		t.Fatal("OpenLogFile(prefix, mylog) returned nil")
+	f, err := OpenLogFile("prefix", "mylog")
+	if err != nil {
+		t.Fatalf("OpenLogFile(prefix, mylog) error: %v", err)
 	}
 	f.Close()
 	if !FileExists("prefix-mylog.log") {
