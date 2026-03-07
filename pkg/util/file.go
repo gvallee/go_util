@@ -100,6 +100,12 @@ func CopyFile(src string, dst string) error {
 	if src == dst {
 		return nil
 	}
+	if src == "" {
+		return fmt.Errorf("copy file: source path is empty")
+	}
+	if dst == "" {
+		return fmt.Errorf("copy file: destination path is empty")
+	}
 
 	// Check that the source file is valid
 	srcStat, err := os.Stat(src)

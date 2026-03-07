@@ -150,6 +150,18 @@ func TestCopyFileErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Run("empty source path", func(t *testing.T) {
+		err := CopyFile("", filepath.Join(dir, "dst"))
+		if err == nil {
+			t.Fatal("CopyFile(empty src) expected error")
+		}
+	})
+	t.Run("empty destination path", func(t *testing.T) {
+		err := CopyFile(existing, "")
+		if err == nil {
+			t.Fatal("CopyFile(empty dst) expected error")
+		}
+	})
 	t.Run("source does not exist", func(t *testing.T) {
 		err := CopyFile(filepath.Join(dir, "nosuch"), filepath.Join(dir, "dst"))
 		if err == nil {
