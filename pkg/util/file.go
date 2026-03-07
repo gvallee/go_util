@@ -162,7 +162,7 @@ func OpenResultsFile(filepath string) (*os.File, error) {
 	if !FileExists(filepath) {
 		mode = os.O_RDWR | os.O_CREATE
 	}
-	f, err := os.OpenFile(filepath, mode, 0755)
+	f, err := os.OpenFile(filepath, mode, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("open results file %s: %w", filepath, err)
 	}

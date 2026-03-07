@@ -231,6 +231,14 @@ func TestOpenResultsFile(t *testing.T) {
 		t.Fatalf("OpenResultsFile() error: %v", err)
 	}
 	f.Close()
+	// New file is created with 0644 (not executable)
+	info, err := os.Stat(fpath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0644 {
+		t.Errorf("new results file perm %v, want 0644", info.Mode().Perm())
+	}
 	// Open again (append mode)
 	f2, err := OpenResultsFile(fpath)
 	if err != nil {
