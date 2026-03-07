@@ -4,6 +4,7 @@
 // See LICENSE.txt for license information
 //
 
+// Package notation provides compressed integer list notation (e.g. "1-5,8,10") and helpers.
 package notation
 
 import (
@@ -68,6 +69,9 @@ func GetNumberOfEltsFromCompressedNotation(str string) (int, error) {
 			if err != nil {
 				return 0, err
 			}
+			if val1 > val2 {
+				return 0, fmt.Errorf("invalid range %d-%d", val1, val2)
+			}
 			num += val2 - val1 + 1
 		} else {
 			for _, part := range t2 {
@@ -103,20 +107,23 @@ func ConvertCompressedCallListToIntSlice(str string) ([]int, error) {
 	for _, t := range tokens {
 		tokens2 := strings.Split(t, "-")
 		if len(tokens2) == 2 {
-			val1, err := strconv.Atoi(tokens2[0])
+			val1, err := strconv.Atoi(strings.TrimSpace(tokens2[0]))
 			if err != nil {
 				return callIDs, err
 			}
-			val2, err := strconv.Atoi(tokens2[1])
+			val2, err := strconv.Atoi(strings.TrimSpace(tokens2[1]))
 			if err != nil {
 				return callIDs, err
+			}
+			if val1 > val2 {
+				return callIDs, fmt.Errorf("invalid range %d-%d", val1, val2)
 			}
 			for i := val1; i <= val2; i++ {
 				callIDs = append(callIDs, i)
 			}
 		} else {
 			for _, t2 := range tokens2 {
-				n, err := strconv.Atoi(t2)
+				n, err := strconv.Atoi(strings.TrimSpace(t2))
 				if err != nil {
 					return callIDs, fmt.Errorf("unable to parse compressed string: %s", str)
 				}
@@ -130,17 +137,19 @@ func ConvertCompressedCallListToIntSlice(str string) ([]int, error) {
 	return callIDs, nil
 }
 
+// IntSliceToString formats the slice as a comma-separated list (e.g. "1,2,3").
 func IntSliceToString(s []int) string {
 	if len(s) == 0 {
 		return ""
 	}
-
-	str := strconv.Itoa(s[0])
+	var b strings.Builder
+	b.Grow(len(s) * 4) // rough: 3 digits + comma per element
+	b.WriteString(strconv.Itoa(s[0]))
 	for i := 1; i < len(s); i++ {
-		str += "," + strconv.Itoa(s[i])
+		b.WriteByte(',')
+		b.WriteString(strconv.Itoa(s[i]))
 	}
-
-	return str
+	return b.String()
 }
 
 var alphabet = []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}

@@ -4,6 +4,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// Package util provides file, path, URL, and string utilities for reuse across projects.
 package util
 
 import (
@@ -32,33 +33,25 @@ const (
 	UnknownFormat = ""
 )
 
-// PathExists checks whether a given path exists
-func PathExists(path string) bool {
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return false
-	}
-
-	if err == nil {
-		return true
-	}
-
-	return false
+// PathExists reports whether the named path exists (returns false on any stat error, e.g. permission denied).
+func PathExists(pathStr string) bool {
+	_, err := os.Stat(pathStr)
+	return err == nil
 }
 
-// FileExists is a utility function that checks whether a path exists and is a regular file.
-// Returns false if the path does not exist, is a directory, or on any stat error.
-func FileExists(path string) bool {
-	info, err := os.Stat(path)
+// FileExists reports whether pathStr exists and is a regular file.
+// It returns false if the path does not exist, is a directory, or on any stat error.
+func FileExists(pathStr string) bool {
+	info, err := os.Stat(pathStr)
 	if err != nil {
 		return false
 	}
 	return info.Mode().IsRegular()
 }
 
-// IsDir checks whether a path is pointing at a directory or not
-func IsDir(name string) bool {
-	info, err := os.Stat(name)
+// IsDir reports whether pathStr exists and is a directory.
+func IsDir(pathStr string) bool {
+	info, err := os.Stat(pathStr)
 	if err != nil {
 		return false
 	}
@@ -108,7 +101,6 @@ func CopyFile(src string, dst string) error {
 		return nil
 	}
 
-	log.Printf("* Copying %s to %s", src, dst)
 	// Check that the source file is valid
 	srcStat, err := os.Stat(src)
 	if err != nil {
@@ -185,14 +177,14 @@ func OpenLogFile(prefix string, name string) *os.File {
 
 // DirInit ensures that the target directory exists and is empty.
 // If the path already exists, it is removed and recreated.
-func DirInit(path string) error {
-	if _, err := os.Stat(path); err == nil {
-		if err := os.RemoveAll(path); err != nil {
-			return fmt.Errorf("failed to remove existing path %s: %w", path, err)
+func DirInit(pathStr string) error {
+	if _, err := os.Stat(pathStr); err == nil {
+		if err := os.RemoveAll(pathStr); err != nil {
+			return fmt.Errorf("failed to remove existing path %s: %w", pathStr, err)
 		}
 	}
-	if err := os.MkdirAll(path, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", path, err)
+	if err := os.MkdirAll(pathStr, 0755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", pathStr, err)
 	}
 	return nil
 }

@@ -6,7 +6,7 @@
 
 package util
 
-// Constants defining the URL types
+// URL type constants for DetectURLType.
 const (
 	// UnsupportedURLType is a constant for a type of URL that we do not support yet
 	UnsupportedURLType = ""

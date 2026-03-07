@@ -57,13 +57,28 @@ func TestConvertCompressedCallListToIntSlice(t *testing.T) {
 }
 
 func TestConvertCompressedCallListToIntSliceErrors(t *testing.T) {
-	_, err := ConvertCompressedCallListToIntSlice("abc")
-	if err == nil {
-		t.Error("ConvertCompressedCallListToIntSlice(\"abc\") expected error")
+	for _, input := range []string{"abc", "1-2a", "5-1"} {
+		_, err := ConvertCompressedCallListToIntSlice(input)
+		if err == nil {
+			t.Errorf("ConvertCompressedCallListToIntSlice(%q) expected error", input)
+		}
 	}
-	_, err = ConvertCompressedCallListToIntSlice("1-2a")
-	if err == nil {
-		t.Error("ConvertCompressedCallListToIntSlice(\"1-2a\") expected error")
+}
+
+func TestConvertCompressedCallListToIntSliceWithSpaces(t *testing.T) {
+	// TrimSpace on range parts allows "1 - 5" style input
+	got, err := ConvertCompressedCallListToIntSlice("1 - 5")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []int{1, 2, 3, 4, 5}
+	if len(got) != len(want) {
+		t.Fatalf("got len %d, want %d", len(got), len(want))
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("at %d: got %d, want %d", i, got[i], want[i])
+		}
 	}
 }
 
@@ -92,13 +107,11 @@ func TestGetNumberOfRanksFromCompressedNotation(t *testing.T) {
 }
 
 func TestGetNumberOfEltsFromCompressedNotationErrors(t *testing.T) {
-	_, err := GetNumberOfEltsFromCompressedNotation("1-x")
-	if err == nil {
-		t.Error("GetNumberOfEltsFromCompressedNotation(\"1-x\") expected error")
-	}
-	_, err = GetNumberOfEltsFromCompressedNotation("a")
-	if err == nil {
-		t.Error("GetNumberOfEltsFromCompressedNotation(\"a\") expected error")
+	for _, input := range []string{"1-x", "a", "5-1"} {
+		_, err := GetNumberOfEltsFromCompressedNotation(input)
+		if err == nil {
+			t.Errorf("GetNumberOfEltsFromCompressedNotation(%q) expected error", input)
+		}
 	}
 }
 

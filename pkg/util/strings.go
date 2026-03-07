@@ -11,17 +11,15 @@ import (
 	"strings"
 )
 
-// CleanupString cleans up a string by removing ANSI color escape sequences.
-// This is convenient when a benchmark returns colored text to the terminal
-// that we then try to parse. Handles both actual ESC bytes (0x1b) and
-// literal \x1b character sequences.
-func CleanupString(str string) string {
-	// Remove ANSI escape sequences: ESC [ <digits> m (actual 0x1b byte)
-	ansiEscape := regexp.MustCompile("\x1b\\[[0-9]+m")
-	str = ansiEscape.ReplaceAllString(str, "")
+var (
+	ansiEscape    = regexp.MustCompile("\x1b\\[[0-9]+m")
+	literalEscape = regexp.MustCompile(`\\x1b\[[0-9]+m`)
+)
 
-	// Remove literal \x1b sequences (e.g. from escaped log output)
-	literalEscape := regexp.MustCompile(`\\x1b\[[0-9]+m`)
+// CleanupString removes ANSI color escape sequences from str.
+// Handles both actual ESC bytes (0x1b) and literal \x1b sequences (e.g. from escaped log output).
+func CleanupString(str string) string {
+	str = ansiEscape.ReplaceAllString(str, "")
 	str = literalEscape.ReplaceAllString(str, "")
 
 	str = strings.ReplaceAll(str, "\x1b[0m", "")
