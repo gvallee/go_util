@@ -280,4 +280,11 @@ func TestOpenLogFile(t *testing.T) {
 	if !FileExists("prefix-mylog.log") {
 		t.Error("OpenLogFile did not create expected file")
 	}
+	info, err := os.Stat("prefix-mylog.log")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0644 {
+		t.Errorf("new log file perm %v, want 0644", info.Mode().Perm())
+	}
 }

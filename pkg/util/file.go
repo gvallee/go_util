@@ -175,7 +175,7 @@ func OpenLogFile(prefix string, name string) (*os.File, error) {
 		return nil, fmt.Errorf("open log file: prefix and name required")
 	}
 	filename := prefix + "-" + name + ".log"
-	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("open log file %s: %w", filename, err)
 	}
