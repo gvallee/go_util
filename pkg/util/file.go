@@ -94,7 +94,8 @@ func DetectTarballFormat(filepath string) string {
 	return UnknownFormat
 }
 
-// CopyFile is a utility functions that copies a file
+// CopyFile copies the regular file src to dst, preserving content and mode (permissions).
+// If src and dst are the same path, it returns nil without copying.
 func CopyFile(src string, dst string) error {
 	if src == dst {
 		return nil
@@ -139,7 +140,10 @@ func CopyFile(src string, dst string) error {
 	if srcStat.Size() != dstStat.Size() {
 		return fmt.Errorf("file copy failed, size is %d instead of %d", srcStat.Size(), dstStat.Size())
 	}
-
+	// Preserve source mode so executables and permissions are copied correctly
+	if err := os.Chmod(dst, srcStat.Mode()); err != nil {
+		return fmt.Errorf("failed to set mode on %s: %w", dst, err)
+	}
 	return nil
 }
 

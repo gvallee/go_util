@@ -120,6 +120,23 @@ func TestCopyFile(t *testing.T) {
 		t.Errorf("CopyFile: read %q, want %q", got, content)
 	}
 
+	// Mode is preserved (e.g. executable bit)
+	srcMode := os.FileMode(0750)
+	if err := os.Chmod(src, srcMode); err != nil {
+		t.Fatal(err)
+	}
+	dst2 := filepath.Join(dir, "dst2")
+	if err := CopyFile(src, dst2); err != nil {
+		t.Fatalf("CopyFile() error = %v", err)
+	}
+	info, err := os.Stat(dst2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode() != srcMode {
+		t.Errorf("CopyFile: dst mode %v, want %v", info.Mode(), srcMode)
+	}
+
 	// Same src and dst is a no-op
 	if err := CopyFile(src, src); err != nil {
 		t.Errorf("CopyFile(src, src) error = %v", err)
