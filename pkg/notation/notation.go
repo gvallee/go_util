@@ -108,7 +108,6 @@ func ConvertCompressedCallListToIntSlice(str string) ([]int, error) {
 	tokens := strings.Split(str, ", ")
 	tokensNoSpace := strings.Split(str, ",")
 	if len(tokens) == 1 && len(tokensNoSpace) > 1 {
-		//log.Printf("[INFO] Switching to notation without spaces for %s", str)
 		tokens = tokensNoSpace
 	}
 
@@ -139,8 +138,6 @@ func ConvertCompressedCallListToIntSlice(str string) ([]int, error) {
 			}
 		}
 	}
-
-	//log.Printf("%s was decompressed into %d elements\n", str, len(callIDs))
 
 	return callIDs, nil
 }
